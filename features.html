@@ -542,13 +542,13 @@
   drawBtn.addEventListener('click', () => {
     const n = parseInt(choiceInput.value, 10);
     if (!n || n < 2) {
-      fieldHint.textContent = 'Enter a whole number of 2 or more.';
+      fieldHint.textContent = 'vaise anshu se directly kyu nhi bol rhi choose karne ko .. ladai hui h kya ? yaa offline bhoot banke gayab h ';
       fieldHint.classList.add('error');
       choiceInput.focus();
       return;
     }
     fieldHint.classList.remove('error');
-    fieldHint.textContent = 'Enter at least 2 to draw a number.';
+    fieldHint.textContent = 'vaise anshu se directly kyu nhi bol rhi choose karne ko .. ladai hui h kya ? yaa offline bhoot banke gayab h ';
     drawResult(n);
   });
 
