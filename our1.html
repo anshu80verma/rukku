@@ -375,7 +375,134 @@
         transition: none;
       }
     }
+  
+    /* ---------- LIGHTBOX / PRESENTATION MODE ---------- */
+    .frame img { cursor: zoom-in; }
+
+    .lightbox {
+      position: fixed;
+      inset: 0;
+      z-index: 200;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: rgba(17, 13, 10, 0.94);
+      opacity: 0;
+      visibility: hidden;
+      transition: opacity .3s ease;
+      touch-action: none;
+    }
+
+    .lightbox.active {
+      opacity: 1;
+      visibility: visible;
+    }
+
+    .lightbox-stage {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 60px 90px;
+    }
+
+    .lightbox-img {
+      max-width: 100%;
+      max-height: 100%;
+      object-fit: contain;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.55);
+      background: #14100c;
+      opacity: 0;
+      transform: scale(0.97);
+      transition: opacity .25s ease, transform .25s ease;
+    }
+
+    .lightbox-img.show {
+      opacity: 1;
+      transform: scale(1);
+    }
+
+    .lightbox-close,
+    .lightbox-nav {
+      position: absolute;
+      background: rgba(246, 239, 227, 0.1);
+      border: 1px solid rgba(246, 239, 227, 0.35);
+      color: var(--ivory);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background .2s ease, transform .2s ease;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    .lightbox-close:hover,
+    .lightbox-nav:hover {
+      background: rgba(246, 239, 227, 0.22);
+    }
+
+    .lightbox-close {
+      top: 22px;
+      right: 22px;
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      font-size: 1.4rem;
+      line-height: 1;
+      z-index: 3;
+    }
+
+    .lightbox-nav {
+      top: 50%;
+      transform: translateY(-50%);
+      width: 52px;
+      height: 52px;
+      border-radius: 50%;
+      font-size: 1.6rem;
+      z-index: 3;
+    }
+
+    .lightbox-nav:active {
+      transform: translateY(-50%) scale(0.92);
+    }
+
+    .lightbox-prev { left: 18px; }
+    .lightbox-next { right: 18px; }
+
+    .lightbox-counter {
+      position: absolute;
+      bottom: 22px;
+      left: 50%;
+      transform: translateX(-50%);
+      color: rgba(246, 239, 227, 0.75);
+      font-size: 0.72rem;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      z-index: 3;
+    }
+
+    .lightbox-hint {
+      position: absolute;
+      top: 22px;
+      left: 22px;
+      color: rgba(246, 239, 227, 0.55);
+      font-size: 0.66rem;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      z-index: 3;
+    }
+
+    @media (max-width:700px) {
+      .lightbox-stage { padding: 60px 16px; }
+      .lightbox-nav { width: 42px; height: 42px; font-size: 1.3rem; }
+      .lightbox-prev { left: 6px; }
+      .lightbox-next { right: 6px; }
+      .lightbox-hint { display: none; }
+    }
   </style>
+
 </head>
 
 <body>
@@ -479,6 +606,97 @@
 
   </script>
 
+
+  <!-- ---------- LIGHTBOX / PRESENTATION MODE ---------- -->
+  <div class="lightbox" id="lightbox">
+    <div class="lightbox-stage">
+      <div class="lightbox-hint">Double‑click a photo to open</div>
+      <button class="lightbox-close" id="lightboxClose" aria-label="Close">&times;</button>
+      <button class="lightbox-nav lightbox-prev" id="lightboxPrev" aria-label="Previous photo">&#8249;</button>
+      <img class="lightbox-img" id="lightboxImg" src="" alt="">
+      <button class="lightbox-nav lightbox-next" id="lightboxNext" aria-label="Next photo">&#8250;</button>
+      <div class="lightbox-counter" id="lightboxCounter"></div>
+    </div>
+  </div>
+
+  <script>
+    (function () {
+      const lightbox = document.getElementById('lightbox');
+      const lightboxImg = document.getElementById('lightboxImg');
+      const counterEl = document.getElementById('lightboxCounter');
+      const btnClose = document.getElementById('lightboxClose');
+      const btnPrev = document.getElementById('lightboxPrev');
+      const btnNext = document.getElementById('lightboxNext');
+      const grid = document.getElementById('galleryGrid');
+
+      let currentIndex = 0;
+
+      function showAt(index) {
+        if (!PHOTOS.length) return;
+        currentIndex = (index + PHOTOS.length) % PHOTOS.length;
+        const photo = PHOTOS[currentIndex];
+        lightboxImg.classList.remove('show');
+        // brief fade for a smoother slide-to-slide feel
+        setTimeout(() => {
+          lightboxImg.src = photo.img;
+          lightboxImg.alt = photo.title || photo.couple || '';
+          lightboxImg.classList.add('show');
+        }, 60);
+        counterEl.textContent = (currentIndex + 1) + ' / ' + PHOTOS.length;
+      }
+
+      function open(index) {
+        showAt(index);
+        lightbox.classList.add('active');
+        document.body.style.overflow = 'hidden';
+      }
+
+      function close() {
+        lightbox.classList.remove('active');
+        document.body.style.overflow = '';
+      }
+
+      function next() { showAt(currentIndex + 1); }
+      function prev() { showAt(currentIndex - 1); }
+
+      // Open on double-click of any photo in the grid (works even after re-render)
+      grid.addEventListener('dblclick', function (e) {
+        const img = e.target.closest('.frame img');
+        if (!img) return;
+        const index = PHOTOS.findIndex(p => p.img === img.getAttribute('src'));
+        open(index === -1 ? 0 : index);
+      });
+
+      btnClose.addEventListener('click', close);
+      btnNext.addEventListener('click', next);
+      btnPrev.addEventListener('click', prev);
+
+      lightbox.addEventListener('click', function (e) {
+        if (e.target === lightbox || e.target.classList.contains('lightbox-stage')) close();
+      });
+
+      document.addEventListener('keydown', function (e) {
+        if (!lightbox.classList.contains('active')) return;
+        if (e.key === 'Escape') close();
+        else if (e.key === 'ArrowRight') next();
+        else if (e.key === 'ArrowLeft') prev();
+      });
+
+      // Simple swipe support for touch devices
+      let touchStartX = null;
+      lightbox.addEventListener('touchstart', function (e) {
+        touchStartX = e.changedTouches[0].clientX;
+      }, { passive: true });
+      lightbox.addEventListener('touchend', function (e) {
+        if (touchStartX === null) return;
+        const dx = e.changedTouches[0].clientX - touchStartX;
+        if (Math.abs(dx) > 40) { dx < 0 ? next() : prev(); }
+        touchStartX = null;
+      }, { passive: true });
+    })();
+  </script>
+
 </body>
+
 
 </html>
